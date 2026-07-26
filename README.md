@@ -15,3 +15,26 @@ Copyright © 2026 Lingling Ding. All rights reserved.
 
 The game and source code may not be copied, modified, redistributed,
 or republished without written permission.
+## Product Thinking
+
+This project was built following an MVP approach.
+
+### Problem
+
+Many office workers experience stress, competing priorities and workplace politics.
+
+### Solution
+
+A humorous browser game that transforms those experiences into an engaging challenge.
+
+### MVP Goal
+
+Validate whether players enjoy a lightweight office-themed survival game.
+
+### Future Iterations
+
+- Character progression
+- Daily challenges
+- Leaderboards
+- Mobile optimisation
+- Analytics
