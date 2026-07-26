@@ -1,0 +1,1434 @@
+<!--
+  WHO OWNS THIS? — Corporate Responsibility Showdown
+  Original game concept, design, writing and source code by Lingling Ding.
+  Copyright © 2026 Lingling Ding. All rights reserved.
+
+  No permission is granted to copy, modify, redistribute, sell, republish,
+  sublicense, create derivative works from, or use this game or its source
+  code in competing products, templates, datasets, or commercial projects
+  without the copyright owner's prior written permission.
+
+  This notice does not replace applicable copyright law. Creation records,
+  source history and publication records should be retained by the owner.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="Who Owns This? is an original workplace decision game about ownership, priorities, boundaries and responsible collaboration." />
+  <meta name="author" content="Lingling Ding" />
+  <meta name="copyright" content="Copyright © 2026 Lingling Ding. All rights reserved." />
+  <meta name="theme-color" content="#0d1321" />
+  <meta name="color-scheme" content="dark" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Who Owns This? — Corporate Responsibility Showdown" />
+  <meta property="og:description" content="Own what is yours, clarify what is unclear, and send misassigned work back." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Who Owns This?" />
+  <meta name="twitter:description" content="A workplace decision game about ownership, priorities and boundaries." />
+  <title>Who Owns This? — Corporate Responsibility Showdown</title>
+  <style>
+    :root {
+      --bg: #0d1321;
+      --panel: #17233b;
+      --panel-2: #203252;
+      --line: #33527d;
+      --text: #f5f7ff;
+      --muted: #a9b7d0;
+      --good: #61d095;
+      --warn: #ffc857;
+      --bad: #ff6b6b;
+      --accent: #6fa8ff;
+      --purple: #b983ff;
+      --shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+    button, input, select { font: inherit; }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(111,168,255,.15), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(185,131,255,.13), transparent 28%),
+        linear-gradient(180deg, #0f1730 0%, #0a1020 100%);
+      pointer-events: none;
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(10, 16, 32, 0.8);
+      border-bottom: 1px solid rgba(110, 151, 211, 0.28);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .logo {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, #6fa8ff, #b983ff);
+      box-shadow: 0 8px 22px rgba(111,168,255,.3);
+      font-size: 24px;
+    }
+    .brand h1 { margin: 0; font-size: clamp(18px, 2.2vw, 26px); line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+    .header-actions { display: flex; gap: 8px; }
+    .ghost-btn, .primary-btn {
+      border: 0; border-radius: 11px; padding: 9px 13px; cursor: pointer; color: white; font-weight: 800;
+      transition: transform .15s ease, filter .15s ease, background .15s ease;
+    }
+    .ghost-btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
+    .primary-btn { background: linear-gradient(135deg, #4e8fff, #8e63ff); box-shadow: 0 8px 20px rgba(78,143,255,.25); }
+    .ghost-btn:hover, .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+
+    main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    #gameWrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid rgba(120, 163, 223, .28);
+      border-radius: 20px;
+      overflow: hidden;
+      background: #101a2c;
+      box-shadow: var(--shadow);
+    }
+
+    canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+
+    .topHud {
+      position: absolute;
+      top: 12px; left: 12px; right: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .hudCard {
+      background: rgba(10, 18, 34, .8);
+      border: 1px solid rgba(142, 178, 232, .25);
+      border-radius: 14px;
+      padding: 10px 12px;
+      backdrop-filter: blur(8px);
+      min-width: 0;
+    }
+    .hudCard.right { text-align: right; }
+    .hudName { font-size: 12px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .hudValue { font-size: 18px; font-weight: 900; margin-top: 2px; }
+    .timer {
+      min-width: 92px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-size: 24px;
+      font-weight: 1000;
+      background: rgba(10,18,34,.88);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 9px 16px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.2);
+    }
+
+    .bar { height: 7px; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; margin-top: 7px; }
+    .bar > span { display: block; height: 100%; width: 50%; border-radius: inherit; transition: width .18s ease; }
+
+    .skillDock {
+      position: absolute;
+      left: 50%; bottom: 14px;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(76px, 112px));
+      gap: 9px;
+      z-index: 4;
+    }
+
+    .skillBtn {
+      position: relative;
+      border: 1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(36,55,88,.94), rgba(21,34,58,.94));
+      color: white;
+      border-radius: 14px;
+      padding: 10px 8px 8px;
+      cursor: pointer;
+      box-shadow: 0 9px 20px rgba(0,0,0,.25);
+      transition: transform .12s ease, filter .12s ease;
+      overflow: hidden;
+      min-height: 68px;
+    }
+    .skillBtn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    .skillBtn:active { transform: translateY(1px) scale(.98); }
+    .skillBtn.disabled { filter: grayscale(.7) brightness(.65); cursor: not-allowed; }
+    .skillIcon { font-size: 22px; display: block; }
+    .skillName { display: block; font-size: 12px; font-weight: 900; margin-top: 2px; }
+    .skillKey { position: absolute; top: 5px; right: 7px; font-size: 10px; color: var(--muted); font-weight: 900; }
+    .cooldownMask { position: absolute; inset: auto 0 0 0; height: 0%; background: rgba(0,0,0,.5); pointer-events: none; }
+
+    .message {
+      position: absolute;
+      left: 50%; top: 86px;
+      transform: translateX(-50%);
+      background: rgba(13, 23, 42, .9);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      padding: 9px 15px;
+      font-weight: 850;
+      opacity: 0;
+      transition: opacity .18s ease, transform .18s ease;
+      pointer-events: none;
+      z-index: 5;
+      white-space: nowrap;
+    }
+    .message.show { opacity: 1; transform: translateX(-50%) translateY(4px); }
+
+    aside {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 12px;
+    }
+    .panel {
+      background: rgba(20, 31, 52, .92);
+      border: 1px solid rgba(120,163,223,.24);
+      border-radius: 17px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel h2 { font-size: 15px; margin: 0 0 10px; }
+    .panel p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 13px; }
+    .statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat {
+      background: rgba(255,255,255,.055);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .stat span { display: block; color: var(--muted); font-size: 11px; }
+    .stat strong { font-size: 20px; margin-top: 3px; display: block; }
+
+    .eventLog { min-height: 0; display: flex; flex-direction: column; }
+    #logList { overflow: auto; min-height: 0; padding-right: 3px; }
+    .logItem {
+      display: grid; grid-template-columns: auto 1fr; gap: 9px;
+      padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 12px; line-height: 1.4;
+    }
+    .logTime { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .logGood { color: var(--good); }
+    .logBad { color: var(--bad); }
+    .logWarn { color: var(--warn); }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(4,8,18,.74);
+      backdrop-filter: blur(10px);
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      width: min(920px, 96vw);
+      max-height: 92vh;
+      overflow: auto;
+      background: linear-gradient(180deg, rgba(29,44,72,.98), rgba(15,24,43,.99));
+      border: 1px solid rgba(143,181,237,.32);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+    }
+    .modal h2 { margin: 0; font-size: clamp(24px, 4vw, 42px); }
+    .modal .subtitle { color: var(--muted); margin: 8px 0 20px; line-height: 1.55; }
+    .roleGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .roleCard {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .roleCard:hover { transform: translateY(-2px); border-color: rgba(111,168,255,.7); }
+    .roleCard.selected { border-color: #70a8ff; background: rgba(111,168,255,.13); box-shadow: 0 0 0 2px rgba(111,168,255,.13) inset; }
+    .roleCard .emoji { font-size: 30px; }
+    .roleCard h3 { margin: 8px 0 5px; }
+    .roleCard p { color: var(--muted); font-size: 12px; margin: 0; line-height: 1.45; }
+    .setupRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .field { background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px; }
+    .field label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 7px; }
+    .field select { width: 100%; background: #12203a; color: white; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 10px; }
+    .modalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+
+    .helpModal { width: min(980px, 96vw); }
+    .helpSection { margin-top: 18px; }
+    .helpSection h3 { margin: 0 0 8px; font-size: 16px; }
+    .helpSection p { margin: 0; color: var(--muted); line-height: 1.7; font-size: 13px; }
+    .helpGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .helpCard { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: 13px; }
+    .helpCard h3 { margin: 5px 0 6px; font-size: 14px; }
+    .helpCard p { margin: 0; color: var(--muted); line-height: 1.55; font-size: 12px; }
+    .helpIcon { font-size: 24px; }
+    .controlList { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .controlList > div { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,.045); border-radius: 10px; padding: 9px 10px; color: var(--muted); font-size: 12px; }
+    kbd { display: inline-block; min-width: 36px; text-align: center; padding: 4px 7px; border-radius: 7px; background: #0e192c; color: var(--text); border: 1px solid rgba(255,255,255,.16); box-shadow: 0 2px 0 rgba(255,255,255,.08); font-weight: 800; }
+    .helpSteps { margin: 0; padding-left: 22px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .helpSteps strong { color: var(--text); }
+    .helpWarning { padding: 13px 14px; border-radius: 13px; background: rgba(255,200,87,.09); border: 1px solid rgba(255,200,87,.25); }
+
+    .resultGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 18px 0; }
+    .award { margin-top: 18px; text-align: center; font-size: 20px; font-weight: 1000; color: var(--warn); }
+    .progressMessage { margin: 10px auto 0; max-width: 680px; text-align: center; color: var(--text); line-height: 1.6; font-size: 14px; }
+    .progressMessage strong { color: var(--good); }
+
+    .legalNotice {
+      margin-top: 18px;
+      padding-top: 13px;
+      border-top: 1px solid rgba(255,255,255,.09);
+      color: rgba(169,183,208,.78);
+      font-size: 11px;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .legalNotice strong { color: rgba(245,247,255,.88); }
+
+    .mobileReturnBtn {
+      display: none;
+      position: absolute;
+      right: 10px;
+      bottom: 84px;
+      z-index: 6;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3);
+      background: linear-gradient(145deg, rgba(255,107,107,.96), rgba(202,61,87,.96));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 1000;
+      line-height: 1.05;
+      box-shadow: 0 12px 28px rgba(0,0,0,.42);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .mobileReturnBtn span { display: block; font-size: 20px; margin-bottom: 2px; }
+    .mobileReturnBtn:active { transform: scale(.94); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      transform: translate(-50%, 18px);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(7,13,25,.96);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      transition: opacity .2s ease, transform .2s ease;
+      box-shadow: 0 12px 35px rgba(0,0,0,.4);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+      aside { grid-template-columns: repeat(3, 1fr); grid-template-rows: auto; }
+      .eventLog { max-height: 180px; }
+      .panel { padding: 10px; }
+      .skillDock { grid-template-columns: repeat(4, minmax(66px, 90px)); bottom: 10px; }
+      .skillName { font-size: 10px; }
+    }
+
+    @media (max-width: 700px) {
+      header { padding: 9px 10px; }
+      .brand p { display: none; }
+      .header-actions .ghost-btn { display: none; }
+      main { padding: 7px; gap: 7px; }
+      aside { display: none; }
+      #gameWrap { border-radius: 14px; }
+      .topHud { top: 7px; left: 7px; right: 7px; gap: 6px; }
+      .hudCard { padding: 7px 9px; }
+      .hudValue { font-size: 14px; }
+      .hudName { font-size: 9px; }
+      .timer { min-width: 72px; font-size: 18px; padding: 7px 10px; }
+      .skillDock { width: calc(100% - 12px); grid-template-columns: repeat(4, 1fr); gap: 5px; }
+      .skillBtn { min-height: 58px; padding: 6px 3px; border-radius: 10px; }
+      .skillIcon { font-size: 19px; }
+      .skillName { font-size: 9px; }
+      .message { top: 70px; max-width: 85vw; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+      .roleGrid { grid-template-columns: 1fr; }
+      .helpGrid, .controlList { grid-template-columns: 1fr; }
+      .setupRow, .resultGrid { grid-template-columns: 1fr 1fr; }
+      .modal { padding: 18px; }
+      .mobileReturnBtn { display: block; }
+      .skillDock { padding-right: 68px; }
+    }
+
+    @media (max-width: 420px) {
+      .brand h1 { font-size: 16px; }
+      .logo { width: 36px; height: 36px; font-size: 20px; }
+      .primary-btn, .ghost-btn { padding: 8px 10px; font-size: 12px; }
+      .mobileReturnBtn { width: 58px; height: 58px; bottom: 76px; right: 7px; }
+      .skillDock { padding-right: 61px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="logo">📨</div>
+      <div>
+        <h1>Who Owns This?</h1>
+        <p>Corporate responsibility showdown · Own what is yours, send unclear work back</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="ghost-btn" id="soundBtn" aria-pressed="true" title="Toggle sound">🔊 Sound On</button>
+      <button class="ghost-btn" id="shareBtn" title="Share this game">↗ Share</button>
+      <button class="ghost-btn" id="helpBtn">玩法说明</button>
+      <button class="primary-btn" id="restartBtn">Restart</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="gameWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div class="topHud">
+        <div class="hudCard">
+          <div class="hudName">You · <span id="playerRoleLabel">SYSTEM OWNER</span></div>
+          <div class="hudValue">Credibility <span id="credibilityValue">100</span></div>
+          <div class="bar"><span id="credibilityBar" style="background:var(--good);width:100%"></span></div>
+        </div>
+        <div class="timer" id="timerText">03:00</div>
+        <div class="hudCard right">
+          <div class="hudName">Stress</div>
+          <div class="hudValue"><span id="stressValue">0</span> / 100</div>
+          <div class="bar"><span id="stressBar" style="background:var(--bad);width:0%"></span></div>
+        </div>
+      </div>
+
+      <div class="message" id="message"></div>
+
+      <button class="mobileReturnBtn" id="mobileReturnBtn" aria-label="Return nearest task"><span>↩</span>Return</button>
+
+      <div class="skillDock">
+        <button class="skillBtn" data-skill="clarify">
+          <span class="skillKey">1</span><span class="skillIcon">❓</span><span class="skillName">Clarify</span><span class="cooldownMask"></span>
+        </button>
+        <button class="skillBtn" data-skill="priority">
+          <span class="skillKey">2</span><span class="skillIcon">⚖️</span><span class="skillName">Trade-off</span><span class="cooldownMask"></span>
+        </button>
+        <button class="skillBtn" data-skill="evidence">
+          <span class="skillKey">3</span><span class="skillIcon">📧</span><span class="skillName">Evidence</span><span class="cooldownMask"></span>
+        </button>
+        <button class="skillBtn" data-skill="shield">
+          <span class="skillKey">4</span><span class="skillIcon">🛡️</span><span class="skillName">Not Committed</span><span class="cooldownMask"></span>
+        </button>
+      </div>
+    </section>
+
+    <aside>
+      <section class="panel">
+        <h2>Mission</h2>
+        <p>Move your character to accept valid work. Send unclear or misassigned tasks back to the right team. Do not let your stress max out.</p>
+      </section>
+      <section class="panel">
+        <h2>Live Stats</h2>
+        <div class="statGrid">
+          <div class="stat"><span>Completed</span><strong id="doneStat">0</strong></div>
+          <div class="stat"><span>Correct Returns</span><strong id="returnStat">0</strong></div>
+          <div class="stat"><span>Wrongly Accepted</span><strong id="wrongStat">0</strong></div>
+          <div class="stat"><span>Combo</span><strong id="comboStat">0</strong></div>
+        </div>
+      </section>
+      <section class="panel eventLog">
+        <h2>Event Log</h2>
+        <div id="logList"></div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <h2>Who Should Own This Task?</h2>
+    <p class="subtitle">Choose your role. Each role has natural advantages with different task types. Use WASD or the arrow keys to move, and press Space to send the nearest task back to its source team.</p>
+
+    <div class="roleGrid" id="roleGrid">
+      <div class="roleCard selected" data-role="systemOwner">
+        <div class="emoji">🧭</div><h3>System Owner</h3>
+        <p>Strong at handling tickets, bugs, and incidents. Better at spotting risk in unclear requests.</p>
+      </div>
+      <div class="roleCard" data-role="businessAnalyst">
+        <div class="emoji">🧩</div><h3>Business Analyst</h3>
+        <p>Strong at clarifying requirements, acceptance criteria, and process issues. The Clarify skill cools down faster.</p>
+      </div>
+      <div class="roleCard" data-role="productOwner">
+        <div class="emoji">🎯</div><h3>Product Owner</h3>
+        <p>Strong at priorities, scope changes, and executive requests. The Trade-off skill is more powerful.</p>
+      </div>
+    </div>
+
+    <div class="setupRow">
+      <div class="field">
+        <label for="difficultySelect">Difficulty</label>
+        <select id="difficultySelect">
+          <option value="easy">Casual Office</option>
+          <option value="normal" selected>Real Workplace</option>
+          <option value="hard">High-Pressure Release Week</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="durationSelect">Round Length</label>
+        <select id="durationSelect">
+          <option value="120">2 Minutes</option>
+          <option value="180" selected>3 Minutes</option>
+          <option value="300">5 Minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modalActions">
+      <button class="primary-btn" id="startBtn">Enter the Office</button>
+    </div>
+    <div class="legalNotice"><strong>Original game by Lingling Ding.</strong><br>Copyright © 2026 Lingling Ding. All rights reserved. No copying, redistribution or commercial reuse without written permission.</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="helpOverlay">
+  <div class="modal helpModal">
+    <h2>玩法与操作说明</h2>
+    <p class="subtitle">你身处一个不断有人“扔任务”的办公室。你的目标不是把所有工作都甩出去，而是判断：哪些任务应该由你承担，哪些需要先澄清，哪些应该退回正确的负责人。</p>
+
+    <div class="helpSection">
+      <h3>一、胜利目标</h3>
+      <p>在倒计时结束前，尽量提高分数和信誉度，同时避免压力值达到 100。正确接收任务、合理退回任务都会得分；乱接任务或乱甩责任会损失信誉。</p>
+    </div>
+
+    <div class="helpGrid">
+      <div class="helpCard">
+        <div class="helpIcon">🟢</div>
+        <h3>绿色边框：可以接</h3>
+        <p>通常表示任务与你的角色匹配。移动角色碰到任务后，系统会自动处理并获得分数。</p>
+      </div>
+      <div class="helpCard">
+        <div class="helpIcon">🟡</div>
+        <h3>黄色边框：先澄清</h3>
+        <p>表示需求模糊、优先级不清或存在隐藏风险。不要直接接，先使用 Clarify 或 Trade-off。</p>
+      </div>
+      <div class="helpCard">
+        <div class="helpIcon">🔴</div>
+        <h3>红色边框：应退回</h3>
+        <p>表示任务不属于你、没有明确负责人，或是不合理的临时要求。靠近后按空格键退回。</p>
+      </div>
+    </div>
+
+    <div class="helpSection">
+      <h3>二、基本操作</h3>
+      <div class="controlList">
+        <div><kbd>W A S D</kbd> 或 <kbd>方向键</kbd><span>移动角色</span></div>
+        <div><kbd>Space</kbd><span>将最近的任务退回来源方</span></div>
+        <div><kbd>1</kbd><span>Clarify：要求对方澄清模糊需求</span></div>
+        <div><kbd>2</kbd><span>Trade-off：要求领导明确优先级和取舍</span></div>
+        <div><kbd>3</kbd><span>Evidence：用邮件或记录保护自己</span></div>
+        <div><kbd>4</kbd><span>Not Committed：拒绝未经确认的承诺</span></div>
+      </div>
+    </div>
+
+    <div class="helpSection">
+      <h3>三、正确处理任务</h3>
+      <ol class="helpSteps">
+        <li><strong>先看边框颜色和任务名称。</strong>绿色通常可接，黄色先澄清，红色应退回。</li>
+        <li><strong>属于你的任务：</strong>直接移动过去碰到它，任务会自动完成。</li>
+        <li><strong>模糊任务：</strong>靠近后使用 1 或 2，让任务变得清晰或重新排序。</li>
+        <li><strong>不属于你的任务：</strong>靠近后按空格退回。判断正确会加分，判断错误会扣信誉。</li>
+        <li><strong>被强行承诺或甩锅时：</strong>使用 3 或 4，减少压力并保护信誉。</li>
+      </ol>
+    </div>
+
+    <div class="helpSection">
+      <h3>四、角色差异</h3>
+      <p><strong>System Owner：</strong>更擅长 Ticket、Bug、Testing、Incident 和 Technical Debt。<br>
+      <strong>Business Analyst：</strong>更擅长 Requirement，Clarify 冷却更快。<br>
+      <strong>Product Owner：</strong>更擅长 Scope Change 和 Executive Request，Trade-off 更强。</p>
+    </div>
+
+    <div class="helpSection helpWarning">
+      <h3>五、最重要的规则</h3>
+      <p>不要为了“显得配合”而接下所有任务，也不要为了得分把所有任务都退回。游戏奖励的是：承担属于自己的责任，同时为模糊、不合理或错误分配的工作建立清晰边界。</p>
+    </div>
+
+    <div class="modalActions"><button class="primary-btn" id="closeHelpBtn">明白了，开始工作</button></div>
+    <div class="legalNotice"><strong>版权提示：</strong>本游戏的原创代码、文字、视觉设计、角色设定及内容均归 Lingling Ding 所有。未经书面许可，不得复制、修改、重新发布或用于商业项目。</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="resultOverlay">
+  <div class="modal">
+    <h2>Round Over</h2>
+    <p class="subtitle" id="resultSummary">You completed a round of the corporate responsibility challenge.</p>
+    <div class="resultGrid">
+      <div class="stat"><span>Total Score</span><strong id="resultScore">0</strong></div>
+      <div class="stat"><span>Tasks Completed</span><strong id="resultDone">0</strong></div>
+      <div class="stat"><span>Correct Returns</span><strong id="resultReturn">0</strong></div>
+      <div class="stat"><span>Final Credibility</span><strong id="resultCred">0</strong></div>
+    </div>
+    <div class="award" id="resultAward">Emerging Talent</div>
+    <div class="progressMessage" id="resultProgress">You’ve got this — one more round can take you even further.</div>
+    <div class="modalActions"><button class="primary-btn" id="playAgainBtn">Play Again</button></div>
+    <div class="legalNotice">Original concept, design and development by Lingling Ding · Copyright © 2026 · All rights reserved.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const gameWrap = document.getElementById('gameWrap');
+
+  const ui = {
+    credibilityValue: document.getElementById('credibilityValue'),
+    stressValue: document.getElementById('stressValue'),
+    credibilityBar: document.getElementById('credibilityBar'),
+    stressBar: document.getElementById('stressBar'),
+    timerText: document.getElementById('timerText'),
+    doneStat: document.getElementById('doneStat'),
+    returnStat: document.getElementById('returnStat'),
+    wrongStat: document.getElementById('wrongStat'),
+    comboStat: document.getElementById('comboStat'),
+    playerRoleLabel: document.getElementById('playerRoleLabel'),
+    logList: document.getElementById('logList'),
+    message: document.getElementById('message'),
+    startOverlay: document.getElementById('startOverlay'),
+    helpOverlay: document.getElementById('helpOverlay'),
+    resultOverlay: document.getElementById('resultOverlay'),
+    soundBtn: document.getElementById('soundBtn'),
+    toast: document.getElementById('toast')
+  };
+
+  const COLORS = {
+    floor: '#15253c', floor2: '#1a2f4e', grid: 'rgba(255,255,255,.045)',
+    player: '#72a7ff', manager: '#f6b55b', business: '#c184ff', tech: '#57d1b0', test: '#ff7f91',
+    text: '#f5f7ff', muted: '#a9b7d0', good: '#61d095', warn: '#ffc857', bad: '#ff6b6b'
+  };
+
+  const ROLES = {
+    systemOwner: { label: 'SYSTEM OWNER', speed: 235, clarifyCD: 8, priorityCD: 11, evidenceCD: 13, shieldCD: 16 },
+    businessAnalyst: { label: 'BUSINESS ANALYST', speed: 245, clarifyCD: 5, priorityCD: 10, evidenceCD: 12, shieldCD: 16 },
+    productOwner: { label: 'PRODUCT OWNER', speed: 230, clarifyCD: 8, priorityCD: 7, evidenceCD: 12, shieldCD: 14 }
+  };
+
+  const TASKS = [
+    { id:'ticket', icon:'🎫', label:'Ticket', owner:'systemOwner', points:10, stress:4, color:'#ffd166' },
+    { id:'bug', icon:'🐞', label:'Bug', owner:'systemOwner', points:14, stress:6, color:'#ef476f' },
+    { id:'requirement', icon:'📜', label:'Requirement', owner:'businessAnalyst', points:12, stress:5, color:'#c084fc', ambiguous:true },
+    { id:'testing', icon:'🧪', label:'Testing', owner:'systemOwner', points:10, stress:5, color:'#5eead4' },
+    { id:'incident', icon:'🔥', label:'Incident', owner:'systemOwner', points:18, stress:12, color:'#ff7849' },
+    { id:'scope', icon:'🌀', label:'Scope Change', owner:'productOwner', points:16, stress:10, color:'#a78bfa', ambiguous:true },
+    { id:'meeting', icon:'🗓️', label:'Quick Call', owner:'none', points:9, stress:9, color:'#60a5fa', reject:true },
+    { id:'urgent', icon:'✉️', label:'Urgent Email', owner:'systemOwner', points:11, stress:8, color:'#fbbf24' },
+    { id:'executive', icon:'👑', label:'Executive Request', owner:'productOwner', points:20, stress:14, color:'#f59e0b', ambiguous:true },
+    { id:'debt', icon:'⚫', label:'Technical Debt', owner:'systemOwner', points:17, stress:11, color:'#64748b' },
+    { id:'unknown', icon:'❔', label:'Unknown Owner', owner:'none', points:13, stress:7, color:'#94a3b8', reject:true }
+  ];
+
+  const DIFFICULTY = {
+    easy: { spawn: 1.45, speed: 95, maxTasks: 10, stressMul: .8 },
+    normal: { spawn: 1.08, speed: 120, maxTasks: 15, stressMul: 1 },
+    hard: { spawn: .75, speed: 155, maxTasks: 20, stressMul: 1.2 }
+  };
+
+  let selectedRole = 'systemOwner';
+  let difficulty = 'normal';
+  let duration = 180;
+  let state = null;
+  let raf = 0;
+  let lastTime = 0;
+  let resizeObserver;
+  const keys = new Set();
+
+
+  // Lightweight synthesised sound effects. No external audio files are required.
+  let audioCtx = null;
+  let soundEnabled = true;
+  let masterGain = null;
+
+  function initAudio() {
+    if (!soundEnabled) return null;
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      audioCtx = new AudioContextClass();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.34;
+      masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function tone(freq, duration=.12, options={}) {
+    const ac = initAudio();
+    if (!ac || !soundEnabled) return;
+    const now = ac.currentTime + (options.delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = options.type || 'sine';
+    osc.frequency.setValueAtTime(Math.max(20, freq), now);
+    if (options.slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, options.slideTo), now + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(options.volume || 0.22, now + Math.min(.018, duration * .25));
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + duration + .03);
+  }
+
+  function noise(duration=.12, options={}) {
+    const ac = initAudio();
+    if (!ac || !soundEnabled) return;
+    const length = Math.max(1, Math.floor(ac.sampleRate * duration));
+    const buffer = ac.createBuffer(1, length, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+    const src = ac.createBufferSource();
+    const filter = ac.createBiquadFilter();
+    const gain = ac.createGain();
+    filter.type = options.filter || 'bandpass';
+    filter.frequency.value = options.frequency || 900;
+    filter.Q.value = options.q || .7;
+    gain.gain.value = options.volume || .12;
+    src.buffer = buffer;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    src.start(ac.currentTime + (options.delay || 0));
+  }
+
+  function playSound(name) {
+    if (!soundEnabled) return;
+    switch (name) {
+      case 'start':
+        tone(392,.11,{volume:.18}); tone(523,.13,{delay:.1,volume:.2}); tone(659,.18,{delay:.2,volume:.22});
+        break;
+      case 'spawn':
+        tone(250,.08,{type:'triangle',slideTo:390,volume:.08});
+        break;
+      case 'accept':
+        tone(660,.09,{type:'triangle',volume:.2}); tone(880,.14,{delay:.07,type:'triangle',volume:.18});
+        break;
+      case 'clarityWarning':
+        tone(420,.11,{type:'square',volume:.12}); tone(350,.14,{delay:.1,type:'square',volume:.1});
+        break;
+      case 'wrong':
+        tone(180,.24,{type:'sawtooth',slideTo:90,volume:.16}); noise(.16,{frequency:280,volume:.07});
+        break;
+      case 'returnGood':
+        noise(.16,{frequency:1450,volume:.11}); tone(520,.09,{delay:.07,type:'triangle',slideTo:760,volume:.16});
+        break;
+      case 'returnBad':
+        noise(.13,{frequency:500,volume:.12}); tone(150,.2,{type:'square',slideTo:105,volume:.12});
+        break;
+      case 'clarify':
+        tone(470,.08,{type:'sine',volume:.16}); tone(620,.1,{delay:.08,volume:.17}); tone(780,.13,{delay:.16,volume:.18});
+        break;
+      case 'priority':
+        tone(300,.1,{type:'triangle',volume:.17}); tone(300,.1,{delay:.13,type:'triangle',volume:.17});
+        break;
+      case 'evidence':
+        noise(.06,{frequency:2200,volume:.08}); tone(940,.08,{delay:.04,type:'sine',volume:.15});
+        break;
+      case 'shield':
+        tone(240,.25,{type:'sine',slideTo:520,volume:.18}); tone(720,.18,{delay:.12,type:'triangle',volume:.12});
+        break;
+      case 'miss':
+        tone(260,.16,{type:'square',slideTo:170,volume:.11});
+        break;
+      case 'end':
+        tone(523,.12,{volume:.16}); tone(659,.12,{delay:.11,volume:.17}); tone(784,.24,{delay:.22,volume:.2});
+        break;
+      case 'burnout':
+        tone(240,.18,{type:'sawtooth',volume:.14}); tone(180,.22,{delay:.14,type:'sawtooth',volume:.14}); tone(110,.35,{delay:.3,type:'sawtooth',volume:.14});
+        break;
+      case 'click':
+        tone(620,.055,{type:'triangle',volume:.08});
+        break;
+    }
+  }
+
+  let toastTimer = 0;
+  function showToast(text) {
+    ui.toast.textContent = text;
+    ui.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => ui.toast.classList.remove('show'), 1800);
+  }
+
+  async function shareGame() {
+    const shareData = {
+      title: 'Who Owns This?',
+      text: 'Try this workplace responsibility game: own what is yours, clarify what is unclear, and protect your priorities.',
+      url: location.href
+    };
+    try {
+      if (navigator.share && location.protocol !== 'file:') {
+        await navigator.share(shareData);
+        return;
+      }
+      if (navigator.clipboard && location.protocol !== 'file:') {
+        await navigator.clipboard.writeText(location.href);
+        showToast('Game link copied!');
+        return;
+      }
+      showToast(location.protocol === 'file:' ? 'Share works after the game is published online.' : 'Copy the address from your browser.');
+    } catch (error) {
+      if (error && error.name !== 'AbortError') showToast('Unable to share. Copy the browser address instead.');
+    }
+  }
+
+  function setSoundEnabled(enabled) {
+    soundEnabled = enabled;
+    ui.soundBtn.textContent = enabled ? '🔊 Sound On' : '🔇 Sound Off';
+    ui.soundBtn.setAttribute('aria-pressed', String(enabled));
+    if (enabled) { initAudio(); playSound('click'); }
+  }
+
+  function makeState() {
+    const role = ROLES[selectedRole];
+    return {
+      running: false,
+      paused: false,
+      elapsed: 0,
+      remaining: duration,
+      spawnTimer: 0.8,
+      score: 0,
+      credibility: 100,
+      stress: 0,
+      done: 0,
+      returned: 0,
+      wrong: 0,
+      combo: 0,
+      maxCombo: 0,
+      tasks: [],
+      particles: [],
+      popups: [],
+      offices: [],
+      player: { x: 0, y: 0, r: 20, vx: 0, vy: 0, speed: role.speed, facingX: 1, facingY: 0, shieldUntil: 0 },
+      manager: { x: 0, y: 0, phase: 0 },
+      skillCD: { clarify:0, priority:0, evidence:0, shield:0 },
+      modifiers: { clarifyUntil:0, priorityUntil:0, evidenceUntil:0 },
+      hitFlash: 0,
+      cameraShake: 0,
+      lastLogSecond: -1
+    };
+  }
+
+  function resizeCanvas() {
+    const rect = gameWrap.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (state) layoutWorld(rect.width, rect.height);
+  }
+
+  function layoutWorld(w, h) {
+    state.player.x = Math.min(Math.max(state.player.x || w * .5, 55), w - 55);
+    state.player.y = Math.min(Math.max(state.player.y || h * .68, 90), h - 90);
+    state.manager.x = w * .5;
+    state.manager.y = 72;
+    state.offices = [
+      { name:'BUSINESS', x:20, y:115, w:w*.27, h:h*.28, color:COLORS.business, icon:'💼' },
+      { name:'TECH', x:w*.365, y:115, w:w*.27, h:h*.28, color:COLORS.tech, icon:'💻' },
+      { name:'TEST', x:w*.71, y:115, w:w*.27-20, h:h*.28, color:COLORS.test, icon:'🧪' }
+    ];
+  }
+
+  function log(text, type='') {
+    const item = document.createElement('div');
+    item.className = 'logItem';
+    const t = Math.max(0, Math.ceil(state ? state.remaining : duration));
+    const mins = String(Math.floor(t / 60)).padStart(2, '0');
+    const secs = String(t % 60).padStart(2, '0');
+    item.innerHTML = `<span class="logTime">${mins}:${secs}</span><span class="${type ? 'log' + type[0].toUpperCase() + type.slice(1) : ''}">${text}</span>`;
+    ui.logList.prepend(item);
+    while (ui.logList.children.length > 18) ui.logList.lastChild.remove();
+  }
+
+  let messageTimer = 0;
+  function flashMessage(text) {
+    ui.message.textContent = text;
+    ui.message.classList.add('show');
+    clearTimeout(messageTimer);
+    messageTimer = setTimeout(() => ui.message.classList.remove('show'), 1500);
+  }
+
+  function startGame() {
+    difficulty = document.getElementById('difficultySelect').value;
+    duration = Number(document.getElementById('durationSelect').value);
+    state = makeState();
+    ui.logList.innerHTML = '';
+    ui.playerRoleLabel.textContent = ROLES[selectedRole].label;
+    resizeCanvas();
+    state.player.x = gameWrap.clientWidth * .5;
+    state.player.y = gameWrap.clientHeight * .72;
+    state.running = true;
+    ui.startOverlay.classList.add('hidden');
+    ui.resultOverlay.classList.add('hidden');
+    log('You entered the office. Assess first, commit second.', 'good');
+    flashMessage('Own what is yours. Send unclear work back.');
+    playSound('start');
+    lastTime = performance.now();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
+  const CAREER_LEVELS = [
+    { min: 0,   max: 250, name: '🌱 Emerging Talent' },
+    { min: 251, max: 350, name: '🚀 Rising Contributor' },
+    { min: 351, max: 450, name: '⭐ Trusted Professional' },
+    { min: 451, max: 550, name: '💡 Impact Maker' },
+    { min: 551, max: 650, name: '🎯 Strategic Player' },
+    { min: 651, max: 750, name: '🧭 Leadership Voice' },
+    { min: 751, max: 850, name: '🏆 Executive Influencer' },
+    { min: 851, max: Infinity, name: '👑 Corporate Legend' }
+  ];
+
+  function getCareerProgress(score) {
+    const safeScore = Math.max(0, Math.round(score));
+    const index = CAREER_LEVELS.findIndex(level => safeScore >= level.min && safeScore <= level.max);
+    const level = CAREER_LEVELS[index === -1 ? 0 : index];
+    const next = CAREER_LEVELS[index + 1] || null;
+    return { safeScore, level, next, pointsNeeded: next ? Math.max(0, next.min - safeScore) : 0 };
+  }
+
+  function endGame(reason='time') {
+    if (!state || !state.running) return;
+    state.running = false;
+    cancelAnimationFrame(raf);
+    const progress = getCareerProgress(state.score);
+    document.getElementById('resultScore').textContent = Math.round(state.score);
+    document.getElementById('resultDone').textContent = state.done;
+    document.getElementById('resultReturn').textContent = state.returned;
+    document.getElementById('resultCred').textContent = Math.max(0, Math.round(state.credibility));
+    document.getElementById('resultAward').textContent = progress.level.name;
+
+    const summary = reason === 'burnout'
+      ? 'That round got intense, but every boundary you set builds your confidence. Reset, protect your priorities, and come back stronger.'
+      : 'Great work — you completed the round and strengthened your workplace instincts.';
+    document.getElementById('resultSummary').textContent = summary;
+
+    document.getElementById('resultProgress').innerHTML = progress.next
+      ? `You are only <strong>${progress.pointsNeeded} points</strong> away from <strong>${progress.next.name}</strong>. Play one more round — your next promotion is within reach!`
+      : `You reached <strong>${progress.level.name}</strong>! Your score has no limit now — play again, set a new personal best, and keep building your legend.`;
+
+    ui.resultOverlay.classList.remove('hidden');
+    playSound(reason === 'burnout' ? 'burnout' : 'end');
+  }
+
+  function spawnTask() {
+    if (state.tasks.length >= DIFFICULTY[difficulty].maxTasks) return;
+    let type = TASKS[Math.floor(Math.random() * TASKS.length)];
+    const rect = gameWrap.getBoundingClientRect();
+    const office = state.offices[Math.floor(Math.random() * state.offices.length)];
+    const x = office.x + office.w * (.2 + Math.random() * .6);
+    const y = office.y + office.h * (.15 + Math.random() * .55);
+    const targetX = rect.width * (.15 + Math.random() * .7);
+    const targetY = rect.height * (.58 + Math.random() * .22);
+    const dx = targetX - x, dy = targetY - y;
+    const len = Math.hypot(dx, dy) || 1;
+    const speed = DIFFICULTY[difficulty].speed * (.8 + Math.random() * .45);
+    state.tasks.push({
+      ...type,
+      uid: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+      x, y, r: 19, vx: dx / len * speed, vy: dy / len * speed,
+      spin: (Math.random() - .5) * 4, angle: 0,
+      source: office.name,
+      age: 0,
+      clarified: false,
+      prioritized: false,
+      evidence: false,
+      dangerPulse: Math.random() * Math.PI * 2
+    });
+    playSound('spawn');
+  }
+
+  function update(dt) {
+    const cfg = DIFFICULTY[difficulty];
+    state.elapsed += dt;
+    state.remaining -= dt;
+    state.hitFlash = Math.max(0, state.hitFlash - dt * 3);
+    state.cameraShake = Math.max(0, state.cameraShake - dt * 18);
+    if (state.remaining <= 0) return endGame('time');
+
+    state.spawnTimer -= dt;
+    if (state.spawnTimer <= 0) {
+      spawnTask();
+      const pressure = 1 - state.remaining / duration;
+      state.spawnTimer = Math.max(.35, cfg.spawn * (1 - pressure * .25)) * (.82 + Math.random() * .45);
+    }
+
+    for (const key of Object.keys(state.skillCD)) state.skillCD[key] = Math.max(0, state.skillCD[key] - dt);
+
+    const p = state.player;
+    let mx = 0, my = 0;
+    if (keys.has('ArrowLeft') || keys.has('a') || keys.has('A')) mx -= 1;
+    if (keys.has('ArrowRight') || keys.has('d') || keys.has('D')) mx += 1;
+    if (keys.has('ArrowUp') || keys.has('w') || keys.has('W')) my -= 1;
+    if (keys.has('ArrowDown') || keys.has('s') || keys.has('S')) my += 1;
+    if (mx || my) {
+      const l = Math.hypot(mx, my); mx /= l; my /= l;
+      p.facingX = mx; p.facingY = my;
+    }
+    p.vx += (mx * p.speed - p.vx) * Math.min(1, dt * 12);
+    p.vy += (my * p.speed - p.vy) * Math.min(1, dt * 12);
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const w = gameWrap.clientWidth, h = gameWrap.clientHeight;
+    p.x = Math.max(30, Math.min(w - 30, p.x));
+    p.y = Math.max(h * .42, Math.min(h - 76, p.y));
+
+    state.manager.phase += dt;
+    state.manager.x = w * .5 + Math.sin(state.manager.phase * .8) * w * .18;
+
+    for (let i = state.tasks.length - 1; i >= 0; i--) {
+      const t = state.tasks[i];
+      t.age += dt; t.angle += t.spin * dt; t.dangerPulse += dt * 5;
+      if (t.prioritized) { t.vx *= Math.pow(.985, dt * 60); t.vy *= Math.pow(.985, dt * 60); }
+      t.x += t.vx * dt; t.y += t.vy * dt;
+      t.vy += 10 * dt;
+      if (t.x < t.r) { t.x = t.r; t.vx = Math.abs(t.vx); }
+      if (t.x > w - t.r) { t.x = w - t.r; t.vx = -Math.abs(t.vx); }
+      if (t.y < 90) { t.y = 90; t.vy = Math.abs(t.vy); }
+      if (t.y > h - 70) { t.y = h - 70; t.vy = -Math.abs(t.vy) * .72; }
+
+      const dist = Math.hypot(t.x - p.x, t.y - p.y);
+      if (dist < t.r + p.r) {
+        resolveCatch(t, i);
+        continue;
+      }
+
+      if (t.age > 12) {
+        state.tasks.splice(i, 1);
+        state.stress += 5 * cfg.stressMul;
+        state.combo = 0;
+        popup(t.x, t.y, 'MISSED', COLORS.bad);
+        log(`${t.label} was left unresolved. Stress increased.`, 'bad');
+        playSound('miss');
+      }
+    }
+
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const q = state.particles[i];
+      q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 80 * dt;
+      if (q.life <= 0) state.particles.splice(i, 1);
+    }
+    for (let i = state.popups.length - 1; i >= 0; i--) {
+      const q = state.popups[i]; q.life -= dt; q.y -= 35 * dt;
+      if (q.life <= 0) state.popups.splice(i, 1);
+    }
+
+    state.stress = Math.max(0, state.stress - dt * .65);
+    if (state.stress >= 100) endGame('burnout');
+    updateUI();
+  }
+
+  function isCorrectForPlayer(t) {
+    if (t.owner === selectedRole) return true;
+    if (selectedRole === 'systemOwner' && (t.id === 'testing' || t.id === 'urgent')) return true;
+    if (selectedRole === 'businessAnalyst' && (t.id === 'requirement' || t.id === 'scope')) return true;
+    if (selectedRole === 'productOwner' && (t.id === 'scope' || t.id === 'executive')) return true;
+    return false;
+  }
+
+  function resolveCatch(t, index) {
+    const cfg = DIFFICULTY[difficulty];
+    const shielded = performance.now() / 1000 < state.player.shieldUntil;
+    const correct = isCorrectForPlayer(t) && !t.reject;
+    const ambiguousUnclarified = t.ambiguous && !t.clarified;
+
+    state.tasks.splice(index, 1);
+    burst(t.x, t.y, correct ? t.color : COLORS.bad, 12);
+    state.hitFlash = 1;
+    state.cameraShake = correct ? 3 : 7;
+
+    if (correct && !ambiguousUnclarified) {
+      state.done++;
+      state.combo++;
+      state.maxCombo = Math.max(state.maxCombo, state.combo);
+      const gain = t.points * (1 + Math.min(state.combo, 10) * .05);
+      state.score += gain;
+      state.credibility = Math.min(100, state.credibility + 1.5);
+      state.stress += Math.max(0, t.stress * cfg.stressMul * (shielded ? .25 : 1));
+      popup(t.x, t.y, `+${Math.round(gain)}`, COLORS.good);
+      log(`Accepted ${t.label}. It is within your scope.`, 'good');
+      playSound('accept');
+    } else if (ambiguousUnclarified && !shielded) {
+      state.wrong++;
+      state.combo = 0;
+      state.score -= 7;
+      state.credibility -= 7;
+      state.stress += t.stress * 1.3 * cfg.stressMul;
+      popup(t.x, t.y, 'NEED CLARITY', COLORS.warn);
+      log(`You accepted ${t.label} before it was clarified.`, 'warn');
+      playSound('clarityWarning');
+    } else if (shielded) {
+      state.returned++;
+      state.score += 8;
+      popup(t.x, t.y, 'NOT COMMITTED', COLORS.good);
+      log(`“I cannot commit yet.” automatically blocked ${t.label}.`, 'good');
+      playSound('returnGood');
+    } else {
+      state.wrong++;
+      state.combo = 0;
+      state.score -= 9;
+      state.credibility -= 9;
+      state.stress += t.stress * cfg.stressMul;
+      popup(t.x, t.y, 'WRONG OWNER', COLORS.bad);
+      log(`You accepted ${t.label}, even though it was not yours.`, 'bad');
+      playSound('wrong');
+    }
+  }
+
+  function returnNearestTask() {
+    if (!state || !state.running) return;
+    const p = state.player;
+    let best = null, bestDist = 95;
+    for (const t of state.tasks) {
+      const d = Math.hypot(t.x - p.x, t.y - p.y);
+      if (d < bestDist) { best = t; bestDist = d; }
+    }
+    if (!best) { flashMessage('Move closer to a task, then press Space.'); playSound('clarityWarning'); return; }
+    const shouldReturn = best.reject || !isCorrectForPlayer(best) || (best.ambiguous && !best.clarified);
+    const dx = best.x - p.x, dy = best.y - p.y;
+    const len = Math.hypot(dx, dy) || 1;
+    best.vx = dx / len * 320;
+    best.vy = dy / len * 320 - 70;
+    best.age = Math.max(0, best.age - 4);
+    burst(best.x, best.y, shouldReturn ? COLORS.good : COLORS.bad, 10);
+
+    if (shouldReturn) {
+      state.returned++;
+      state.combo++;
+      state.maxCombo = Math.max(state.maxCombo, state.combo);
+      state.score += best.points * .8;
+      state.credibility = Math.min(100, state.credibility + 1);
+      popup(best.x, best.y, 'RETURNED', COLORS.good);
+      log(`Correctly returned ${best.label}: confirm the owner or scope first.`, 'good');
+      playSound('returnGood');
+    } else {
+      state.wrong++;
+      state.combo = 0;
+      state.score -= 8;
+      state.credibility -= 6;
+      popup(best.x, best.y, 'BLAME TOKEN', COLORS.bad);
+      log(`You sent away ${best.label}, even though it was your responsibility.`, 'bad');
+      playSound('returnBad');
+    }
+  }
+
+  function useSkill(skill) {
+    if (!state || !state.running || state.skillCD[skill] > 0) return;
+    const role = ROLES[selectedRole];
+    if (skill === 'clarify') {
+      state.skillCD.clarify = role.clarifyCD;
+      let count = 0;
+      for (const t of state.tasks) {
+        if (Math.hypot(t.x - state.player.x, t.y - state.player.y) < 190 && t.ambiguous) { t.clarified = true; count++; popup(t.x,t.y,'CLARIFIED',COLORS.good); }
+      }
+      flashMessage(count ? `Clarified ${count} task${count === 1 ? '' : 's'}` : 'No nearby tasks need clarification.');
+      log('Used Clarify: Could you clarify the expected outcome?', 'good');
+      playSound('clarify');
+    }
+    if (skill === 'priority') {
+      state.skillCD.priority = role.priorityCD;
+      let count = 0;
+      for (const t of state.tasks) {
+        if (Math.hypot(t.x - state.player.x, t.y - state.player.y) < 230) { t.prioritized = true; count++; }
+      }
+      state.stress = Math.max(0, state.stress - 8);
+      flashMessage(count ? `Requested trade-offs for ${count} task${count === 1 ? '' : 's'}` : 'What should I deprioritise?');
+      log('Used Trade-off: every new urgent task must replace an existing priority.', 'good');
+      playSound('priority');
+    }
+    if (skill === 'evidence') {
+      state.skillCD.evidence = role.evidenceCD;
+      let count = 0;
+      for (const t of state.tasks) {
+        if (Math.hypot(t.x - state.player.x, t.y - state.player.y) < 220) {
+          t.evidence = true;
+          if (t.id === 'unknown' || t.id === 'scope' || t.id === 'executive') { t.reject = true; count++; }
+        }
+      }
+      state.credibility = Math.min(100, state.credibility + 4);
+      flashMessage(count ? 'The evidence trail revealed the real owner.' : 'Emails and meeting notes have been saved.');
+      log('Used Evidence: Please show me the decision record.', 'good');
+      playSound('evidence');
+    }
+    if (skill === 'shield') {
+      state.skillCD.shield = role.shieldCD;
+      state.player.shieldUntil = performance.now()/1000 + 4.5;
+      flashMessage('I cannot commit yet.');
+      log('Activated Not Committed: you cannot be forced to accept work temporarily.', 'good');
+      playSound('shield');
+    }
+    updateSkillUI();
+  }
+
+  function burst(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2, s = 45 + Math.random() * 120;
+      state.particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s-30, life:.45+Math.random()*.45, color, size:2+Math.random()*4 });
+    }
+  }
+
+  function popup(x, y, text, color) { state.popups.push({ x, y, text, color, life:1.05 }); }
+
+  function updateUI() {
+    ui.credibilityValue.textContent = Math.max(0, Math.round(state.credibility));
+    ui.stressValue.textContent = Math.min(100, Math.round(state.stress));
+    ui.credibilityBar.style.width = `${Math.max(0, state.credibility)}%`;
+    ui.stressBar.style.width = `${Math.min(100, state.stress)}%`;
+    const time = Math.max(0, Math.ceil(state.remaining));
+    ui.timerText.textContent = `${String(Math.floor(time/60)).padStart(2,'0')}:${String(time%60).padStart(2,'0')}`;
+    ui.doneStat.textContent = state.done;
+    ui.returnStat.textContent = state.returned;
+    ui.wrongStat.textContent = state.wrong;
+    ui.comboStat.textContent = state.combo;
+    updateSkillUI();
+  }
+
+  function updateSkillUI() {
+    document.querySelectorAll('.skillBtn').forEach(btn => {
+      const skill = btn.dataset.skill;
+      const cd = state ? state.skillCD[skill] : 0;
+      const max = ROLES[selectedRole][skill + 'CD'];
+      const mask = btn.querySelector('.cooldownMask');
+      mask.style.height = `${max ? Math.min(100, cd / max * 100) : 0}%`;
+      btn.classList.toggle('disabled', cd > 0);
+    });
+  }
+
+  function roundedRect(x,y,w,h,r) {
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,r);
+  }
+
+  function draw() {
+    const w = gameWrap.clientWidth, h = gameWrap.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    if (state.cameraShake > 0) ctx.translate((Math.random()-.5)*state.cameraShake, (Math.random()-.5)*state.cameraShake);
+
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, COLORS.floor2); grad.addColorStop(1, COLORS.floor);
+    ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+
+    ctx.strokeStyle = COLORS.grid; ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 34) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for (let y = 0; y < h; y += 34) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+    drawOffices();
+    drawManager();
+    for (const t of state.tasks) drawTask(t);
+    drawPlayer();
+    drawParticles();
+
+    if (state.hitFlash > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${state.hitFlash*.08})`;
+      ctx.fillRect(0,0,w,h);
+    }
+    ctx.restore();
+  }
+
+  function drawOffices() {
+    for (const o of state.offices) {
+      ctx.save();
+      ctx.globalAlpha = .92;
+      ctx.fillStyle = 'rgba(13,25,44,.78)';
+      roundedRect(o.x,o.y,o.w,o.h,14); ctx.fill();
+      ctx.strokeStyle = o.color; ctx.globalAlpha=.55; ctx.lineWidth=2; ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.fillStyle = o.color; ctx.font='900 12px system-ui'; ctx.fillText(`${o.icon} ${o.name}`, o.x+12, o.y+22);
+      ctx.fillStyle='rgba(255,255,255,.06)'; roundedRect(o.x+10,o.y+33,o.w-20,o.h-45,10); ctx.fill();
+      ctx.restore();
+    }
+
+    const w = gameWrap.clientWidth, h = gameWrap.clientHeight;
+    ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(0,h*.43); ctx.lineTo(w,h*.43); ctx.stroke();
+    ctx.fillStyle='rgba(10,18,32,.72)'; roundedRect(w*.36,h*.44,w*.28,34,12); ctx.fill();
+    ctx.fillStyle=COLORS.muted; ctx.textAlign='center'; ctx.font='800 12px system-ui';
+    ctx.fillText('DELIVERY ZONE · ACCOUNTABLE WORK', w*.5, h*.44+22); ctx.restore();
+  }
+
+  function drawManager() {
+    const m = state.manager;
+    ctx.save();
+    ctx.translate(m.x,m.y);
+    ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(0,22,28,9,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=COLORS.manager; ctx.beginPath(); ctx.arc(0,0,22,0,Math.PI*2); ctx.fill();
+    ctx.font='22px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('👔',0,0);
+    ctx.fillStyle='#fff'; ctx.font='900 10px system-ui'; ctx.fillText('MANAGER',0,-31);
+    if (Math.sin(state.manager.phase*1.7) > .5) {
+      ctx.fillStyle='rgba(255,255,255,.9)'; roundedRect(25,-35,142,30,10); ctx.fill();
+      ctx.fillStyle='#17233b'; ctx.font='800 11px system-ui'; ctx.textAlign='left'; ctx.fillText('Can you do this now?',34,-16);
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer() {
+    const p = state.player;
+    const shielded = performance.now()/1000 < p.shieldUntil;
+    ctx.save(); ctx.translate(p.x,p.y);
+    ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0,22,28,10,0,0,Math.PI*2); ctx.fill();
+    if (shielded) {
+      ctx.strokeStyle='rgba(97,208,149,.85)'; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(0,0,29+Math.sin(performance.now()/120)*2,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.fillStyle=COLORS.player; ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill();
+    ctx.font='22px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🧑‍💻',0,0);
+    ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(p.facingX*30,p.facingY*30); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='900 10px system-ui'; ctx.fillText('YOU',0,-31);
+    ctx.restore();
+  }
+
+  function drawTask(t) {
+    ctx.save(); ctx.translate(t.x,t.y); ctx.rotate(t.angle);
+    const correct = isCorrectForPlayer(t) && !t.reject;
+    const ambiguous = t.ambiguous && !t.clarified;
+    const ring = ambiguous ? COLORS.warn : (correct ? COLORS.good : COLORS.bad);
+    ctx.shadowColor = ring; ctx.shadowBlur = 10 + Math.sin(t.dangerPulse)*3;
+    ctx.fillStyle='rgba(9,16,29,.92)'; ctx.beginPath(); ctx.arc(0,0,t.r+3,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=ring; ctx.lineWidth=3; ctx.stroke();
+    ctx.shadowBlur=0; ctx.font='21px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t.icon,0,0);
+    ctx.rotate(-t.angle);
+    ctx.fillStyle='rgba(8,14,25,.88)'; roundedRect(-42,27,84,20,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='800 10px system-ui'; ctx.fillText(t.label,0,37);
+    if (t.clarified) { ctx.fillStyle=COLORS.good; ctx.font='900 10px system-ui'; ctx.fillText('✓',17,-18); }
+    if (t.evidence) { ctx.font='11px system-ui'; ctx.fillText('📧',-18,-19); }
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const q of state.particles) {
+      ctx.globalAlpha=Math.max(0,q.life*1.7); ctx.fillStyle=q.color; ctx.fillRect(q.x,q.y,q.size,q.size);
+    }
+    ctx.globalAlpha=1;
+    for (const q of state.popups) {
+      ctx.globalAlpha=Math.min(1,q.life*2); ctx.fillStyle=q.color; ctx.textAlign='center'; ctx.font='1000 13px system-ui'; ctx.fillText(q.text,q.x,q.y);
+    }
+    ctx.globalAlpha=1;
+  }
+
+  function loop(now) {
+    if (!state || !state.running) return;
+    const dt = Math.min(.033, (now - lastTime) / 1000 || 0);
+    lastTime = now;
+    update(dt);
+    draw();
+    if (state.running) raf = requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('keydown', e => {
+    const k = e.key;
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(k)) e.preventDefault();
+    keys.add(k);
+    if (!e.repeat) {
+      if (k === ' ') returnNearestTask();
+      if (k === '1') useSkill('clarify');
+      if (k === '2') useSkill('priority');
+      if (k === '3') useSkill('evidence');
+      if (k === '4') useSkill('shield');
+    }
+  }, { passive:false });
+  window.addEventListener('keyup', e => keys.delete(e.key));
+
+  let touchActive = false;
+  canvas.addEventListener('pointerdown', e => {
+    if (!state || !state.running) return;
+    touchActive = true;
+    const rect = canvas.getBoundingClientRect();
+    const tx = e.clientX - rect.left, ty = e.clientY - rect.top;
+    moveToward(tx,ty);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!touchActive || !state || !state.running) return;
+    const rect = canvas.getBoundingClientRect();
+    moveToward(e.clientX - rect.left, e.clientY - rect.top);
+  });
+  window.addEventListener('pointerup', () => { touchActive=false; keys.clear(); });
+
+  function moveToward(tx,ty) {
+    const dx=tx-state.player.x, dy=ty-state.player.y;
+    keys.clear();
+    if (Math.abs(dx)>12) keys.add(dx<0?'ArrowLeft':'ArrowRight');
+    if (Math.abs(dy)>12) keys.add(dy<0?'ArrowUp':'ArrowDown');
+  }
+
+  document.querySelectorAll('.skillBtn').forEach(btn => btn.addEventListener('click', () => useSkill(btn.dataset.skill)));
+  document.querySelectorAll('.roleCard[data-role]').forEach(card => card.addEventListener('click', () => {
+    document.querySelectorAll('.roleCard[data-role]').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected'); selectedRole = card.dataset.role; updateSkillUI();
+  }));
+
+  ui.soundBtn.addEventListener('click', () => setSoundEnabled(!soundEnabled));
+  document.getElementById('shareBtn').addEventListener('click', shareGame);
+  document.getElementById('mobileReturnBtn').addEventListener('pointerdown', e => { e.preventDefault(); returnNearestTask(); });
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    if (state) state.running=false;
+    cancelAnimationFrame(raf);
+    ui.startOverlay.classList.remove('hidden');
+  });
+  document.getElementById('helpBtn').addEventListener('click', () => ui.helpOverlay.classList.remove('hidden'));
+  document.getElementById('closeHelpBtn').addEventListener('click', () => ui.helpOverlay.classList.add('hidden'));
+  document.getElementById('playAgainBtn').addEventListener('click', () => { ui.resultOverlay.classList.add('hidden'); ui.startOverlay.classList.remove('hidden'); });
+
+  resizeObserver = new ResizeObserver(resizeCanvas);
+  resizeObserver.observe(gameWrap);
+  state = makeState();
+  resizeCanvas();
+  draw();
+})();
+</script>
+</body>
+</html>
